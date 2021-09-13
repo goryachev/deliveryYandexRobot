@@ -31,3 +31,6 @@
 *.out
 *.app
 .vs/
+Debug/
+Release/
+x64/
