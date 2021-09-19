@@ -320,12 +320,13 @@ namespace city
 		std::multimap <uint64_t, task> tasks;
 		std::multimap <uint64_t, task>::iterator it;
 	public:
+		uint64_t map_size = 0;
 		uint64_t total = 0;
 		uint64_t MaxTips = 0;
 
 		task find(uint2 pos)
 		{
-			uint64_t cur_key = pos.x + pos.y;
+			uint64_t cur_key = pos.x + pos.y * map_size;
 			auto it1 = std::find_if(tasks.rbegin(), tasks.rend(), [cur_key](const auto& pair) {return (cur_key < pair.first);}).base();
 			auto it2 = std::find_if(tasks.begin(), tasks.end(), [cur_key](const auto& pair) {return (cur_key > pair.first);});
 			
@@ -334,12 +335,6 @@ namespace city
 
 			cur_key = fabs(it1->first - cur_key) < fabs(it2->first - cur_key) ? it1->first : it2->first;
 			it = tasks.lower_bound(cur_key);
-			return it->second;
-
-			it = tasks.lower_bound(it2->first);
-		 	if (it1 != it2)
-			  if (fabs(it1->first - cur_key) < fabs(it2->first - cur_key))
-					 it = tasks.lower_bound(it1->first);
 			return it->second;
 		}
 		
@@ -354,7 +349,7 @@ namespace city
 
 		void insert(const task T) 
 		{
-			tasks.insert(std::pair<uint64_t, task>((T.begin.x + T.begin.y), T));
+			tasks.insert(std::pair<uint64_t, task>((T.begin.x + T.begin.y * map_size), T));
 		}
 
 		bool empty() { return tasks.empty(); }
@@ -373,7 +368,8 @@ namespace city
 
 		void build_robots()
 		{
-			uint64_t numRobots = std::min((uint64_t)12, (((tasks.MaxTips - std::min(numIters * 60, map.size * map.size)) * tasks.total) / Cost_c));
+			tasks.map_size = map.size;
+			uint64_t numRobots = std::min((uint64_t)8, (((tasks.MaxTips - std::min(numIters * 60, map.size * map.size)) * tasks.total) / Cost_c));
 			printf("%llu\n", numRobots);
 			robots.resize(numRobots);
 			for (uint64_t ir = 0 ; ir < numRobots; ++ir)
