@@ -23,14 +23,14 @@ namespace city
 		uint64_t x, y;
 		uint2() : x(0), y(0) {};
 		uint2(uint64_t _x, uint64_t _y): x(_x), y(_y) {}
-		uint2 operator+(uint2 z) { return uint2(x + z.x, y + z.y);}
-		uint2 operator-(uint2 z) { return uint2(x - z.x, y - z.y); }
-		uint2 operator*(uint64_t z) { return uint2(x * z, y * z); }
-		void operator=(uint2 z) { x = z.x; y = z.y;}
-		void operator+=(uint2 z) { x += z.x; y += z.y; };
-		void operator-=(uint2 z) { x -= z.x; y -= z.y; };
-		void operator*=(uint64_t z) { x *= z; y *= z; };
-		bool operator==(uint2 z) { return ((x == z.x) * (y == z.y)); }
+		inline uint2 operator+(const uint2 z) { return uint2(x + z.x, y + z.y);}
+		inline uint2 operator-(const uint2 z) { return uint2(x - z.x, y - z.y); }
+		inline uint2 operator*(const uint64_t z) { return uint2(x * z, y * z); }
+		inline void operator=(const uint2 z) { x = z.x; y = z.y;}
+		inline void operator+=(const uint2 z) { x += z.x; y += z.y; };
+		inline void operator-=(const uint2 z) { x -= z.x; y -= z.y; };
+		inline void operator*=(const uint64_t z) { x *= z; y *= z; };
+		inline bool operator==(const uint2 z) { return ((x == z.x) * (y == z.y)); }
 	};
 
 	struct task
@@ -135,7 +135,8 @@ namespace city
 			current_state = state::STAY;
 			if (isBusy)
 			{
-				if (navigation_map[current_pos.x][current_pos.y] == 1) 
+				const auto& current_mark = navigation_map[current_pos.x][current_pos.y];
+				if (current_mark == 1) 
 				{
 					if (check_begin_task())
 					{
@@ -143,7 +144,7 @@ namespace city
 						save_state(time);
 						return;
 					}
-					if (check_end_task())
+	//				if (check_end_task())
 					{
 						current_state = state::POP;
 						isBusy = false;
@@ -153,8 +154,8 @@ namespace city
 				}
 				if (current_pos.x > 0)
 				{
-					auto neibour = navigation_map[current_pos.x - 1][current_pos.y];
-					if ((navigation_map[current_pos.x][current_pos.y] > neibour) && (neibour > 0))
+					const auto& neibour_mark = navigation_map[current_pos.x - 1][current_pos.y];
+					if ((neibour_mark < current_mark) && (neibour_mark > 0))
 					{
 						current_pos = uint2(current_pos.x - 1, current_pos.y);
 						current_state = state::UP;
@@ -164,8 +165,8 @@ namespace city
 				}
 				if (current_pos.y > 0)
 				{
-					auto neibour = navigation_map[current_pos.x][current_pos.y - 1];
-					if ((navigation_map[current_pos.x][current_pos.y] > neibour) && (neibour > 0))
+					const auto& neibour_mark = navigation_map[current_pos.x][current_pos.y - 1];
+					if ((neibour_mark < current_mark) && (neibour_mark > 0))
 					{
 						current_pos = uint2(current_pos.x, current_pos.y - 1);
 						current_state = state::LEFT;
@@ -175,8 +176,8 @@ namespace city
 				}
 				if (current_pos.x < (size_map - 1))
 				{
-					auto neibour = navigation_map[current_pos.x + 1][current_pos.y];
-					if ((navigation_map[current_pos.x][current_pos.y] > neibour) && (neibour > 0))
+					const auto& neibour_mark = navigation_map[current_pos.x + 1][current_pos.y];
+					if ((neibour_mark < current_mark) && (neibour_mark > 0))
 					{
 						current_pos = uint2(current_pos.x + 1, current_pos.y);
 						current_state = state::DOWN;
@@ -186,8 +187,8 @@ namespace city
 				}
 				if (current_pos.y < (size_map - 1))
 				{
-					auto neibour = navigation_map[current_pos.x][current_pos.y+1];
-					if ((navigation_map[current_pos.x][current_pos.y] > neibour) && (neibour > 0))
+					const auto& neibour_mark = navigation_map[current_pos.x][current_pos.y+1];
+					if ((neibour_mark < current_mark) && (neibour_mark > 0))
 					{
 						current_pos = uint2(current_pos.x, current_pos.y + 1);
 						current_state = state::RIGHT;
@@ -261,43 +262,48 @@ namespace city
 			std::queue<uint2> neibours;
 			navigation[attraction_point.x][attraction_point.y] = 1;
 			neibours.push(attraction_point);
-			while (!neibours.empty())
+			while(!neibours.empty())
 			{
-				uint2 current_cell = neibours.front();
+				const uint2 current_cell = neibours.front();
+				const auto& current_mark = navigation[current_cell.x][current_cell.y];
 				neibours.pop();
-				if(current_cell.x < (size-1))
+				if(current_cell.x > 0)
 				{
-					if (navigation[current_cell.x + 1][current_cell.y] == 0 && !map[current_cell.x + 1][current_cell.y])
+					auto& neibour_mark = navigation[current_cell.x - 1][current_cell.y];
+					if (neibour_mark == 0 && !map[current_cell.x - 1][current_cell.y])
 					{
-						navigation[current_cell.x + 1][current_cell.y] = navigation[current_cell.x][current_cell.y] + 1;
-						neibours.push(uint2(current_cell.x + 1, current_cell.y));
-					}
-				}
-				if( current_cell.x > 0)
-				{
-					if (navigation[current_cell.x - 1][current_cell.y] == 0 && !map[current_cell.x - 1][current_cell.y])
-					{
-						navigation[current_cell.x - 1][current_cell.y] = navigation[current_cell.x][current_cell.y] + 1;
+						neibour_mark = current_mark + 1;
 						neibours.push(uint2(current_cell.x - 1, current_cell.y));
 					}
 				}
-				if( current_cell.y > 0) 
+				if(current_cell.y > 0) 
 				{
-					if (navigation[current_cell.x][current_cell.y - 1] == 0 && !map[current_cell.x][current_cell.y - 1])
+					auto& neibour_mark = navigation[current_cell.x][current_cell.y - 1];
+					if (neibour_mark == 0 && !map[current_cell.x][current_cell.y - 1])
 					{
-						navigation[current_cell.x][current_cell.y - 1] = navigation[current_cell.x][current_cell.y] + 1;
-						neibours.push(uint2(current_cell.x, current_cell.y - 1));
+						neibour_mark = current_mark + 1;
+				 		neibours.push(uint2(current_cell.x, current_cell.y - 1));
 					}
 				}
-				if (current_cell.y < (size-1)) 
+				if(current_cell.x < (size - 1))
 				{
-					if (navigation[current_cell.x][current_cell.y + 1] == 0 && !map[current_cell.x][current_cell.y + 1])
+					auto& neibour_mark = navigation[current_cell.x + 1][current_cell.y];
+					if (neibour_mark == 0 && !map[current_cell.x + 1][current_cell.y])
 					{
-						navigation[current_cell.x][current_cell.y + 1] = navigation[current_cell.x][current_cell.y] + 1;
+						neibour_mark = current_mark + 1;
+						neibours.push(uint2(current_cell.x + 1, current_cell.y));
+					}
+				}
+				if(current_cell.y < (size - 1)) 
+				{
+					auto& neibour_mark = navigation[current_cell.x][current_cell.y + 1];
+					if (neibour_mark == 0 && !map[current_cell.x][current_cell.y + 1])
+					{
+						neibour_mark = current_mark + 1;
 						neibours.push(uint2(current_cell.x, current_cell.y + 1));
 					}
 				}
-			} 
+			}//while 
 		}
 
 		void print()
@@ -324,11 +330,16 @@ namespace city
 		uint64_t total = 0;
 		uint64_t MaxTips = 0;
 
+		inline uint64_t calc_key(const uint2 pos)
+		{
+			return pos.x + pos.y * map_size;
+		}
+
 		task find(uint2 pos)
 		{
-			uint64_t cur_key = pos.x + pos.y * map_size;
+			uint64_t cur_key = calc_key(pos);
 			auto it1 = std::find_if(tasks.rbegin(), tasks.rend(), [cur_key](const auto& pair) {return (cur_key < pair.first);}).base();
-			auto it2 = std::find_if(tasks.begin(), tasks.end(), [cur_key](const auto& pair) {return (cur_key > pair.first);});
+			auto it2 = std::find_if(tasks.cbegin(), tasks.cend(), [cur_key](const auto& pair) {return (cur_key > pair.first);});
 			
 			if (it2 == tasks.end())	it2--;
 			if (it1 == tasks.end()) it1--;
@@ -337,7 +348,7 @@ namespace city
 			it = tasks.lower_bound(cur_key);
 			return it->second;
 		}
-		
+	
 		void erase() 
 		{
 			if(it!=tasks.end())
@@ -345,11 +356,12 @@ namespace city
 				tasks.erase(it);
 				it = tasks.end();
 			}
+			
 		};
 
 		void insert(const task T) 
 		{
-			tasks.insert(std::pair<uint64_t, task>((T.begin.x + T.begin.y * map_size), T));
+			tasks.insert(std::pair<uint64_t, task>(calc_key(T.begin), T));
 		}
 
 		bool empty() { return tasks.empty(); }
@@ -369,7 +381,7 @@ namespace city
 		void build_robots()
 		{
 			tasks.map_size = map.size;
-			uint64_t numRobots = std::min((uint64_t)8, (((tasks.MaxTips - std::min(numIters * 60, map.size * map.size)) * tasks.total) / Cost_c));
+			uint64_t numRobots = std::min((uint64_t)7, (((tasks.MaxTips - std::min(numIters * 60, map.size * map.size)) * tasks.total) / Cost_c));
 			printf("%llu\n", numRobots);
 			robots.resize(numRobots);
 			for (uint64_t ir = 0 ; ir < numRobots; ++ir)
@@ -379,6 +391,8 @@ namespace city
 				{
 					cur_pos = uint2(gen(map.size - 1), gen(map.size - 1));
 				}
+			//	if (ir == 0)cur_pos = uint2(3, 2);
+			//	if (ir == 1)cur_pos = uint2(1, 0);
 				robots[ir].create(cur_pos, map.size);
 				if (ir < numRobots-1)
 					printf("%llu %llu ", (cur_pos.x + 1), (cur_pos.y + 1));
@@ -390,9 +404,7 @@ namespace city
 
 		void run()
 		{
-			uint64_t current_iter = 0;
-		//	uint64_t current_tip = 0;
-			while (current_iter != numIters)
+			for (uint64_t current_iter = 0; current_iter < numIters; ++current_iter)
 			{
 				uint64_t iQ;
 				std::cin >> iQ;
@@ -420,9 +432,9 @@ namespace city
 							{
 								map.create_navigation(r.current_task.begin, r.navigation_map);
 							}
-							if (r.navigation_map[r.current_pos.x][r.current_pos.y] != 0)
+						//	if (r.navigation_map[r.current_pos.x][r.current_pos.y] != 0)
 							{
-							//	std::cout << "isBusy : "<< r.isBusy << "\ttask = " << r.current_task.begin.x + 1 << ' ' << r.current_task.begin.y + 1 << " : " << r.current_task.end.x + 1 << ' ' << r.current_task.end.y + 1 << "\n";
+						//		std::cout << "isBusy : "<< r.isBusy << "\ttask = " << r.current_task.begin.x + 1 << ' ' << r.current_task.begin.y + 1 << " : " << r.current_task.end.x + 1 << ' ' << r.current_task.end.y + 1 << "\n";
 								r.isBusy = true;
 								tasks.erase();
 							}
@@ -439,13 +451,12 @@ namespace city
 			//			}
 					}
 				}
-				
 				for (const auto& r : robots)
 				{
 					r.dump_states();
 				//	std::cout << r.current_pos.x + 1 << ' ' << r.current_pos.y + 1 << " | TotalTips = " << TotalTips - Cost_c * numRobots << std::endl;
 				}
-				current_iter++;
+
 			}
 		};
 		void destroy_robots() 
